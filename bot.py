@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-import time
 import sys
 import requests
-import telepot
+import telepot, telepot.aio
 import json
-import os
+import asyncio
 from time import sleep
-from telepot.loop import MessageLoop
-from telepot.helper import InlineUserHandler, AnswererMixin
+from telepot.aio.loop import MessageLoop
+from telepot.aio.helper import InlineUserHandler, AnswererMixin
 from telepot.namedtuple import InlineQueryResultPhoto
 
 with open(sys.path[0] + '/keys.json', 'r') as f:
     key = json.load(f)
-bot = telepot.Bot(key['telegram'])
+bot = telepot.aio.Bot(key['telegram'])
 
-def on_inline_query(msg):
+async def on_inline_query(msg):
     query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
 
     rest_headers={'content-type':'application/json', 'accept':'application/json'}
@@ -45,9 +44,9 @@ def on_inline_query(msg):
         return { 'results' : listobj, 'cache_time' : 1 }
     answerer.answer(msg, compute)
 
-answerer = telepot.helper.Answerer(bot)
-MessageLoop(bot,{'chat' : None,
-                  'inline_query' : on_inline_query}).run_as_thread()
+answerer = telepot.aio.helper.Answerer(bot)
+loop = asyncio.get_event_loop()
+loop.create_task(MessageLoop(bot,{'chat' : None,
+                  'inline_query' : on_inline_query}).run_forever())
 print('Started...')
-while 1:
-    sleep(10)
+loop.run_forever()
